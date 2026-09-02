@@ -14,6 +14,24 @@ import (
 	"time"
 )
 
+// --- model table (single source of truth for /v1/models + plugin) ---
+
+func TestModelTableIsNotEmpty(t *testing.T) {
+	if len(Models) == 0 {
+		t.Fatal("Models is empty")
+	}
+	seen := make(map[string]bool, len(Models))
+	for _, m := range Models {
+		if m.ID == "" || m.Ctx <= 0 {
+			t.Fatalf("model entry invalid: %+v", m)
+		}
+		if seen[m.ID] {
+			t.Fatalf("duplicate model id: %s", m.ID)
+		}
+		seen[m.ID] = true
+	}
+}
+
 // --- trace context (official client identifiers) ---
 
 func TestTraceCtxHeaders(t *testing.T) {
@@ -21,17 +39,17 @@ func TestTraceCtxHeaders(t *testing.T) {
 	h := http.Header{}
 	tc.Apply(h)
 	checks := map[string]string{
-		"X-Conversation-ID":       tc.ConversationID,
+		"X-Conversation-ID":         tc.ConversationID,
 		"X-Conversation-Request-ID": tc.RootID,
 		"X-Conversation-Message-ID": tc.RequestID,
-		"X-Request-ID":            tc.RequestID,
-		"X-Root-Request-ID":       tc.RootID,
-		"X-Trace-ID":              tc.RootID,
-		"traceparent":             "00-" + tc.RootID + "-" + tc.SpanID + "-01",
-		"b3":                      tc.RootID + "-" + tc.SpanID + "-1",
-		"X-B3-TraceId":            tc.RootID,
-		"X-B3-Sampled":            "1",
-		"X-IDE-Version":           IdeVersion,
+		"X-Request-ID":              tc.RequestID,
+		"X-Root-Request-ID":         tc.RootID,
+		"X-Trace-ID":                tc.RootID,
+		"traceparent":               "00-" + tc.RootID + "-" + tc.SpanID + "-01",
+		"b3":                        tc.RootID + "-" + tc.SpanID + "-1",
+		"X-B3-TraceId":              tc.RootID,
+		"X-B3-Sampled":              "1",
+		"X-IDE-Version":             IdeVersion,
 	}
 	for k, want := range checks {
 		if got := h.Get(k); got != want {

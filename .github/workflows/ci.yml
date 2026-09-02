@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  core:
+    name: core (build + vet + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test ./...
+
+  plugin:
+    name: plugin (cgo build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      # cmd/plugin is a nested module requiring go 1.26 + cgo; the build
+      # emits workbuddy.so/.h which .gitignore keeps out of the tree.
+      - run: go build -buildmode=c-shared -o workbuddy.so .
+        working-directory: cmd/plugin
+      - run: test -s workbuddy.so
+        working-directory: cmd/plugin

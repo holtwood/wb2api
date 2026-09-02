@@ -14,11 +14,11 @@ import (
 // Message is one OpenAI-format message. Content is either a string or an
 // OpenAI-style content part array.
 type Message struct {
-	Role       string          `json:"role"`
-	Content    any             `json:"content,omitempty"`
-	ToolCalls  []ToolCall      `json:"tool_calls,omitempty"`
-	ToolCallID string          `json:"tool_call_id,omitempty"`
-	Name       string          `json:"name,omitempty"`
+	Role       string     `json:"role"`
+	Content    any        `json:"content,omitempty"`
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Name       string     `json:"name,omitempty"`
 }
 
 // ToolCall is an assistant-side tool invocation.

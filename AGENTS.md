@@ -25,7 +25,7 @@ wb2api/
 ├── core/          # 协议转换、OAuth 登录与 token 刷新、多账号轮转、会话/缓存字段注入
 │                  # 禁止 import 任何 CLIProxyAPI 的包；纯 Go package，可离线单测
 ├── cmd/
-│   ├── plugin/    # CPA 插件入口薄壳，只做注册与适配，目标 <500 行（依赖 go1.26+CLIProxyAPI，暂未建）
+│   ├── plugin/    # CPA 插件入口薄壳，只做注册/适配/ABI 胶水，不得含协议逻辑（依赖 go1.26+CLIProxyAPI）
 │   └── server/    # 独立 HTTP 服务（OpenAI 兼容 /v1），开发期验证用，纯标准库
 ├── tools/capture/ # 一键抓包工具包（mitmproxy addon + 脚本 + 说明）
 ├── specs/         # MITM 抓包记录与协议规格文档（协议事实的最高权威，Phase 1 产出）

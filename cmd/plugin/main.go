@@ -6,8 +6,9 @@
 // shared prompt cache is served (see specs/capture-2026-09-02.md).
 //
 // All WorkBuddy protocol logic lives in wb2api/core; this file is a thin ABI
-// shell (<500 lines). The C ABI shape follows the MIT-licensed reference
-// implementation lovingfish/workbuddy-cliproxy (see NOTICE).
+// shell with no protocol logic of its own. The C ABI shape follows the
+// MIT-licensed reference implementation lovingfish/workbuddy-cliproxy
+// (see NOTICE).
 package main
 
 /*
@@ -292,7 +293,7 @@ func pluginRegistration() registration {
 			Name:             providerName,
 			Version:          version,
 			Author:           "wb2api (protocol reference: lovingfish/workbuddy-cliproxy, MIT)",
-			GitHubRepository: "https://github.com/test-dev/wb2api",
+			GitHubRepository: "https://github.com/holtwood/wb2api",
 		},
 		Capabilities: registrationCapability{
 			ModelProvider:         true,
@@ -306,41 +307,19 @@ func pluginRegistration() registration {
 }
 
 func modelList() []pluginapi.ModelInfo {
-	// Confirmed against official CodeBuddy CLI 2.143.0 (2026-09-02).
-	const maxCompletionTokens int64 = 8192
-	specs := []struct {
-		id, name string
-		ctx      int64
-	}{
-		{"hy4-preview", "Hy4 Preview", 262144},
-		{"hy3", "Hy3", 262144},
-		{"hy3-x", "Hy3 X", 262144},
-		{"hy3-preview", "Hy3 Preview", 262144},
-		{"hy3-preview-agent", "Hy3 Preview Agent", 262144},
-		{"glm-5.3", "GLM-5.3", 1000000},
-		{"glm-5.3-flash", "GLM-5.3 Flash", 1000000},
-		{"glm-5.2", "GLM-5.2", 1000000},
-		{"glm-5.1", "GLM-5.1", 131072},
-		{"glm-5v-turbo", "GLM-5V Turbo", 131072},
-		{"minimax-m3", "MiniMax M3", 204800},
-		{"minimax-m2.7", "MiniMax M2.7", 204800},
-		{"kimi-k3-1", "Kimi K3.1", 262144},
-		{"kimi-k2.7", "Kimi K2.7", 262144},
-		{"kimi-k2.6", "Kimi K2.6", 262144},
-		{"deepseek-v4-pro", "DeepSeek V4 Pro", 1000000},
-		{"deepseek-v4-flash", "DeepSeek V4 Flash", 1000000},
-	}
-	models := make([]pluginapi.ModelInfo, 0, len(specs))
-	for _, m := range specs {
+	// Official model table lives in wb2api/core (protocol fact); adapt it to
+	// the CPA model info shape here.
+	models := make([]pluginapi.ModelInfo, 0, len(core.Models))
+	for _, m := range core.Models {
 		models = append(models, pluginapi.ModelInfo{
-			ID:                         m.id,
+			ID:                         m.ID,
 			Object:                     "model",
 			OwnedBy:                    providerName,
-			DisplayName:                m.name,
-			Name:                       m.id,
+			DisplayName:                m.Name,
+			Name:                       m.ID,
 			SupportedGenerationMethods: []string{"chat"},
-			ContextLength:              m.ctx,
-			MaxCompletionTokens:        maxCompletionTokens,
+			ContextLength:              m.Ctx,
+			MaxCompletionTokens:        core.MaxCompletionTokens,
 			UserDefined:                true,
 		})
 	}

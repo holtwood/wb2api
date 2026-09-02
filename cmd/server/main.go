@@ -43,12 +43,12 @@ func main() {
 	}
 
 	s := &server{
-		chat:    chat,
-		oauth:   oauth,
-		mgr:     mgr,
-		authDir: authDir,
+		chat:     chat,
+		oauth:    oauth,
+		mgr:      mgr,
+		authDir:  authDir,
 		sessions: map[string]*core.LoginSession{},
-		traces:  map[string]*core.TraceCtx{},
+		traces:   map[string]*core.TraceCtx{},
 	}
 
 	mux := http.NewServeMux()
@@ -212,28 +212,13 @@ func (s *server) handleRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleModels(w http.ResponseWriter, r *http.Request) {
-	// Confirmed against the official CodeBuddy CLI 2.143.0 (2026-09-02):
-	//   hy4-preview, hy3, hy3-x, glm-5.3, glm-5.3-flash, glm-5.2, glm-5.1,
-	//   glm-5v-turbo, minimax-m3, minimax-m2.7, kimi-k3-1, kimi-k2.7,
-	//   kimi-k2.6, deepseek-v4-pro, deepseek-v4-flash
-	models := []map[string]any{
-		{"id": "hy4-preview", "object": "model", "owned_by": "tencent"},
-		{"id": "hy3", "object": "model", "owned_by": "tencent"},
-		{"id": "hy3-x", "object": "model", "owned_by": "tencent"},
-		{"id": "hy3-preview", "object": "model", "owned_by": "tencent"},
-		{"id": "hy3-preview-agent", "object": "model", "owned_by": "tencent"},
-		{"id": "glm-5.3", "object": "model", "owned_by": "tencent"},
-		{"id": "glm-5.3-flash", "object": "model", "owned_by": "tencent"},
-		{"id": "glm-5.2", "object": "model", "owned_by": "tencent"},
-		{"id": "glm-5.1", "object": "model", "owned_by": "tencent"},
-		{"id": "glm-5v-turbo", "object": "model", "owned_by": "tencent"},
-		{"id": "minimax-m3", "object": "model", "owned_by": "tencent"},
-		{"id": "minimax-m2.7", "object": "model", "owned_by": "tencent"},
-		{"id": "kimi-k3-1", "object": "model", "owned_by": "tencent"},
-		{"id": "kimi-k2.7", "object": "model", "owned_by": "tencent"},
-		{"id": "kimi-k2.6", "object": "model", "owned_by": "tencent"},
-		{"id": "deepseek-v4-pro", "object": "model", "owned_by": "tencent"},
-		{"id": "deepseek-v4-flash", "object": "model", "owned_by": "tencent"},
+	// Model table lives in wb2api/core (protocol fact, confirmed against the
+	// official CodeBuddy CLI 2.143.0 on 2026-09-02).
+	models := make([]map[string]any, 0, len(core.Models))
+	for _, m := range core.Models {
+		models = append(models, map[string]any{
+			"id": m.ID, "object": "model", "owned_by": "tencent",
+		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"object": "list", "data": models})
 }

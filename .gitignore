@@ -19,3 +19,6 @@ cmd/plugin/*.h
 # 编辑器
 .vscode/
 .idea/
+
+# 本地 agent 会话数据
+.commandcode/
