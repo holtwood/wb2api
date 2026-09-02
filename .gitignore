@@ -1,0 +1,21 @@
+# 认证凭据（含 access/refresh token，切勿提交）
+.wb2api/
+**/workbuddy.json
+
+# 抓包产物
+tools/capture/captures/
+captures/
+*.flow
+__pycache__/
+
+# 构建产物
+bin/
+*.so
+*.dylib
+*.dll
+*.exe
+cmd/plugin/*.h
+
+# 编辑器
+.vscode/
+.idea/
