@@ -1,66 +1,74 @@
 # wb2api — Tencent CodeBuddy/WorkBuddy 非官方反代
 
 简单说：登录你自己的 CodeBuddy / WorkBuddy 订阅后，wb2api 会把它包装成一个
-OpenAI 兼容的本地 API 服务，让 OpenCode、Codex CLI 等 AI 工具直接使用这个订阅。
+OpenAI 兼容的本地 API 服务，让 Claude Code、Codex CLI 等 AI 工具直接使用这个订阅。
 
 > **非官方项目，与腾讯无关。** 需使用自有合法订阅，仅限个人学习研究，请遵守腾讯
 > 服务条款。详见文末[合规](#合规)。
 
-## 快速开始（独立服务）
+## 运行效果
 
-**1. 启动服务**
+![wb2api 终端运行截图](docs/screenshots/wb2api-terminal.png)
 
-```bash
-go run ./cmd/server        # 默认监听 http://127.0.0.1:8787
-```
+## 快速开始
 
-可选环境变量：`WB2API_ADDR` 监听地址；`WB2API_AUTH_DIR` 凭据目录（默认 `~/.wb2api`）；
-`WB2API_STRATEGY` 多账号轮转策略 `roundrobin` / `fillfirst`。
-
-**2. 登录 CodeBuddy 账号**（每个账号执行一次）
-
-```bash
-# ① 发起登录，返回一个授权链接
-curl -X POST http://127.0.0.1:8787/v1/auth/login
-# → {"authUrl":"https://...","state":"..."}
-
-# ② 浏览器打开上面的 authUrl，扫码或网页授权完成后：
-curl "http://127.0.0.1:8787/v1/auth/poll?state=<state>"
-# → {"pending":false,"nickname":"你的账号名"} 即为登录成功
-```
-
-凭据自动保存到 `~/.wb2api/workbuddy.json`，重启服务后自动加载；重复登录不同账号，
-请求会按策略轮转。
-
-**3. 开始对话**
-
-```bash
-curl -N http://127.0.0.1:8787/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"hy3","stream":true,"messages":[{"role":"user","content":"hi"}]}'
-```
-
-模型名用上游模型 id（`hy3`、`glm-5.3` 等，完整列表见 `GET /v1/models`）。
-
-**4. 接入你的 AI 工具**
-
-- **OpenCode / Codex CLI / 任意 OpenAI SDK**：把 baseURL / API 端点指向
-  `http://127.0.0.1:8787/v1` 即可。
-- **Claude Code**：它只支持 Anthropic 协议，不能直连本服务，请使用下方
-  插件形态（CLIProxyAPI 宿主负责转换）。
-
-## CPA 插件形态（让 Claude Code 等也能用）
-
-CLIProxyAPI 宿主负责 OpenAI ↔ Anthropic 等协议转换，本插件在其中把 WorkBuddy
-注册为一个可用模型源。
+**1. 构建插件**
 
 ```bash
 cd cmd/plugin && $GO build -buildmode=c-shared -o workbuddy.so .   # 需 Go 1.26+ 与 gcc
 cp workbuddy.so <宿主目录>/plugins/linux/amd64/
 ```
 
-在宿主 `config.yaml` 中启用 workbuddy 插件并设置 `auth-dir`，登录走宿主自带流程，
-然后把 Claude Code / OpenCode / Codex CLI 的端点指向宿主即可。
+**2. 在宿主 CLIProxyAPI 中启用并登录**
+
+编辑宿主 `config.yaml`：
+
+```yaml
+plugins:
+  enabled: true
+  dir: "/abs/path/to/plugins"      # 放 workbuddy.so 的目录
+  configs:
+    workbuddy:
+      enabled: true
+auth-dir: "~/.cli-proxy-api"       # 默认目录，登录凭据写在这里
+api-keys:
+  - "<你的-api-key>"
+```
+
+登录走宿主自带流程（`/v1/auth/login`，浏览器扫码/授权），完成后凭据保存到
+`auth-dir`。
+
+**3. 接入 Claude Code / Codex**
+
+- **Claude Code**：编辑 `~/.claude/settings.json`：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "<你的-api-key>",
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317"
+  },
+  "model": "hy3"
+}
+```
+
+- **Codex CLI**：编辑 `~/.codex/config.toml`：
+
+```toml
+model = "hy3"
+model_provider = "workbuddy"
+
+[model_providers.workbuddy]
+name = "workbuddy"
+base_url = "http://127.0.0.1:8317/v1"
+wire_api = "chat"
+```
+
+宿主默认监听 `127.0.0.1:8317`；模型名用上游模型 id（`hy3`、`glm-5.3` 等）。
+
+> 具体接入步骤以 CLIProxyAPI 官方文档为准：
+> <https://help.router-for.me/agent-client/claude-code>（Claude Code）、
+> <https://help.router-for.me/agent-client/codex>（Codex）。
 
 ## 合规
 
